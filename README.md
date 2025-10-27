@@ -1,2 +1,2 @@
-# Javascript_Projectss
+# Javascript_Projects
 Code Repo for Javascript
