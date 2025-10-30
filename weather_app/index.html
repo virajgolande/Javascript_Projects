@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <div class="searchbox">
+      <input type="text" placeholder="Enter city name" spellcheck="false">
+      <button><img src="./images/search.png" alt="search icon"></button>
+    </div>
+
+    <div class="weather">
+      <img src="./images/rain.png" alt="weather icon" class="weather_icon">
+      <h1 class="temp">28°C</h1>
+      <h2 class="city">New York</h2>
+
+      <div class="details">
+        <div class="col">
+          <img src="./images/humidity.png" alt="humidity">
+          <div>
+            <p class="humidity">50%</p>
+            <p>humidity</p>
+          </div>
+        </div>
+        <div class="col">
+          <img src="./images/wind.png" alt="wind">
+          <div>
+            <p class="wind">15 km/h</p>
+            <p>wind speed</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🌤 5-day forecast section -->
+      <div class="forecast">
+        <h3>5-Day Forecast</h3>
+        <div class="forecast-container" id="forecast"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const apiKey = "bfe9bb10c53e099655a773e334f20422";
+    const apiUrl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
+
+    const searchBox = document.querySelector('.searchbox input');
+    const searchBtn = document.querySelector('.searchbox button');
+    const weatherIcon = document.querySelector('.weather_icon');
+
+    // ✅ Function to change background color dynamically
+    function setBackground(weatherType) {
+      const colors = {
+        "Clear": "linear-gradient(135deg, #f6d365, #fda085)",
+        "Clouds": "linear-gradient(135deg, #83a4d4, #b6fbff)",
+        "Rain": "linear-gradient(135deg, #667db6, #0082c8, #0082c8, #667db6)",
+        "Drizzle": "linear-gradient(135deg, #89f7fe, #66a6ff)",
+        "Mist": "linear-gradient(135deg, #cfd9df, #e2ebf0)",
+        "Default": "linear-gradient(135deg, #89f7fe, #66a6ff)"
+      };
+      document.body.style.background = colors[weatherType] || colors["Default"];
+    }
+
+    // ✅ Function to fetch current weather
+    async function checkweather(city) {
+      const response = await fetch(apiUrl + city + `&appid=${apiKey}`);
+      if (response.status == 404) {
+        alert("Invalid city name!");
+      } else {
+        const data = await response.json();
+
+        document.querySelector('.city').innerHTML = data.name;
+        document.querySelector('.temp').innerHTML = Math.round(data.main.temp) + "°C";
+        document.querySelector('.humidity').innerHTML = data.main.humidity + "%";
+        document.querySelector('.wind').innerHTML = data.wind.speed + " km/h";
+
+        // ✅ Change icon and background based on weather
+        const weatherMain = data.weather[0].main;
+        setBackground(weatherMain);
+
+        if (weatherMain == "Clouds") weatherIcon.src = "images/clouds.png";
+        else if (weatherMain == "Clear") weatherIcon.src = "images/clear.png";
+        else if (weatherMain == "Rain") weatherIcon.src = "images/rain.png";
+        else if (weatherMain == "Drizzle") weatherIcon.src = "images/drizzle.png";
+        else if (weatherMain == "Mist") weatherIcon.src = "images/mist.png";
+        else weatherIcon.src = "images/clear.png";
+
+        document.querySelector(".weather").style.display = "block";
+
+        // ✅ Call forecast after fetching current weather
+        getForecast(city);
+      }
+    }
+
+    // ✅ Function to fetch 5-day forecast
+    async function getForecast(city) {
+      const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`;
+      const response = await fetch(forecastUrl);
+      const data = await response.json();
+
+      const forecastContainer = document.getElementById("forecast");
+      forecastContainer.innerHTML = ""; // clear old forecast
+
+      const dailyForecast = data.list.filter(item => item.dt_txt.includes("12:00:00"));
+
+      dailyForecast.forEach(day => {
+        const date = new Date(day.dt * 1000);
+        const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+        const temp = Math.round(day.main.temp);
+        const icon = day.weather[0].icon;
+        const desc = day.weather[0].main;
+
+        const card = document.createElement("div");
+        card.classList.add("day-card");
+        card.innerHTML = `
+          <p>${dayName}</p>
+          <img src="https://openweathermap.org/img/wn/${icon}.png" alt="${desc}">
+          <p>${temp}°C</p>
+          <p>${desc}</p>
+        `;
+        forecastContainer.appendChild(card);
+      });
+    }
+
+    // ✅ On button click, fetch weather + forecast
+    searchBtn.addEventListener("click", () => {
+      const city = searchBox.value.trim();
+      if (city !== "") checkweather(city);
+    });
+  </script>
+</body>
+</html>
